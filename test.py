@@ -1,4 +1,5 @@
 import sys
+import json
 import numpy as np
 import cv2
 import easyocr
@@ -6,6 +7,18 @@ import easyocr
 # this needs to run only once to load the model into memory
 reader = easyocr.Reader(['ch_sim','en'])
 #reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet50')
+
+
+class JsonEncoder(json.JSONEncoder):
+    """Convert numpy classes to JSON serializable objects."""
+
+    def default(self, obj):
+        if isinstance(obj, (np.integer, np.floating, np.bool_)):
+            return obj.item()
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(JsonEncoder, self).default(obj)
 
 
 def ocr(img):    
@@ -36,3 +49,11 @@ if __name__ == '__main__':
 
     for i in r1:
         print(f"{i[2]:.6f}\t{i[1]}")
+
+    json.dump(
+        r1,
+        open('result.json', 'w', encoding='utf-8'),
+        #indent=4,
+        ensure_ascii=False,
+        cls=JsonEncoder
+    )
