@@ -25,7 +25,7 @@ def process_api(request_id, request_msg):
     try:
         if request['api']=='/api/ocr/det': # 文本检测
             # base64 图片 转为 opencv 数据
-            img = __load_image_b64(request['params']['image'])
+            img = ocr.load_image_b64(request['params']['image'])
             r1, _ = ocr.detect(img)
             # [x_min, x_max, y_min, y_max] --> [左上, 右上, 右下, 左下] 
             boxes = [[[i[0],i[2]],[i[1],i[2]],[i[1],i[3]],[i[0],i[3]]] for i in r1]
@@ -45,10 +45,11 @@ def process_api(request_id, request_msg):
 
         elif request['api']=='/api/ocr/rec': # 文字识别
             # base64 图片 转为 opencv 数据
-            img = __load_image_b64(request['params']['image'])
+            img = ocr.load_image_b64(request['params']['image'])
+            param_boxes = json.loads(request['params']['boxes'])
             # [左上, 右上, 右下, 左下] --> [x_min, x_max, y_min, y_max]
             boxes = []
-            for box in request['params']['boxes']:
+            for box in param_boxes:
                 boxes.append([box[0][0], box[1][0], box[0][1], box[2][1]])
             r1, _ = ocr.recognize(img, boxes, [])
 
@@ -72,6 +73,10 @@ def process_api(request_id, request_msg):
     except binascii.Error as e:
         logger.error("编码转换异常: %s" % e)
         result = { 'code' : 9901, 'msg' : 'base64编码异常: '+str(e) }
+
+    except json.decoder.JSONDecodeError as e:
+        logger.error("json转换异常: %s" % e)
+        result = { 'code' : 9902, 'msg' : 'json编码异常: '+str(e) }
 
     except Exception as e:
         logger.error("未知异常: %s" % e, exc_info=True)

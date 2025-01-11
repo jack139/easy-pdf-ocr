@@ -24,7 +24,7 @@ class JsonEncoder(json.JSONEncoder):
 
 
 # 将 base64 编码的图片转为 opencv 数组
-def __load_image_b64(b64_data, remove_color=True, max_size=1500):
+def load_image_b64(b64_data, remove_color=True, max_size=1500):
     data = base64.b64decode(b64_data) # Bytes
     tmp_buff = BytesIO()
     tmp_buff.write(data)
