@@ -1,5 +1,7 @@
 import sys
 import json
+import base64
+from io import BytesIO
 import numpy as np
 import cv2
 import easyocr
@@ -19,6 +21,25 @@ class JsonEncoder(json.JSONEncoder):
             return obj.tolist()
         else:
             return super(JsonEncoder, self).default(obj)
+
+
+# 将 base64 编码的图片转为 opencv 数组
+def __load_image_b64(b64_data, remove_color=True, max_size=1500):
+    data = base64.b64decode(b64_data) # Bytes
+    tmp_buff = BytesIO()
+    tmp_buff.write(data)
+    tmp_buff.seek(0)
+    file_bytes = np.asarray(bytearray(tmp_buff.read()), dtype=np.uint8)
+    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    if remove_color:
+        img = img[:, :, ::-1] # 去色，强化图片
+    tmp_buff.close()
+    # 压缩处理
+    max_width = max(img.shape)
+    if max_width>max_size: # 图片最大宽度为 1500
+        ratio = max_size/max_width
+        img = cv2.resize(img, (round(img.shape[1]*ratio), round(img.shape[0]*ratio)))
+    return img
 
 
 def ocr(img):    
@@ -60,12 +81,20 @@ if __name__ == '__main__':
     # 只检测文本
     r1, r2 = detect(img)
 
-    print(r1)
+    print(r1)  # [x_min, x_max, y_min, y_max]
     print(r2)
     
+    # box转换为 4个点坐标
+    # [x_min, x_max, y_min, y_max] --> [左上, 右上, 右下, 左下] 
     boxes = [[[i[0],i[2]],[i[1],i[2]],[i[1],i[3]],[i[0],i[3]]] for i in r1]
 
-    r3 = recognize(img, r1, r2)
+    #r3 = recognize(img, r1, r2)
+
+    # [左上, 右上, 右下, 左下] --> [x_min, x_max, y_min, y_max]
+    box = boxes[0]
+    box = [box[0][0], box[1][0], box[0][1], box[2][1]]
+    print(box)
+    r3 = recognize(img, [box], [])
 
 
     print(boxes)

@@ -1,0 +1,141 @@
+# -*- coding: utf-8 -*-
+
+# 后台调度程序，异步执行，使用redis作为消息队列
+
+import sys, json, time
+import concurrent.futures
+from datetime import datetime
+import binascii
+
+from utils import helper
+from utils import logger
+from settings import REDIS_CONFIG, MAX_DISPATCHER_WORKERS
+
+import ocr
+
+logger = logger.get_logger(__name__)
+
+
+# db connection: thread-safe
+mongo = helper.mongo_conn()
+
+
+def process_api(request_id, request_msg):
+    request = request_msg
+    try:
+        if request['api']=='/api/ocr/det': # 文本检测
+            # base64 图片 转为 opencv 数据
+            img = __load_image_b64(request['params']['image'])
+            r1, _ = ocr.detect(img)
+            # [x_min, x_max, y_min, y_max] --> [左上, 右上, 右下, 左下] 
+            boxes = [[[i[0],i[2]],[i[1],i[2]],[i[1],i[3]],[i[0],i[3]]] for i in r1]
+
+            # 记录日志
+            mongo.rag_log.insert_one({
+                'request_id': request_id,
+                'time_t': helper.time_str(),
+                'category': 'OCR_DET',
+                'image': request['params']['image'],
+                'result': boxes,
+                'extras': {},
+            })
+
+            # 准备结果
+            result = { 'code' : 0, 'msg':'success', 'boxes' : boxes }
+
+        elif request['api']=='/api/ocr/rec': # 文字识别
+            # base64 图片 转为 opencv 数据
+            img = __load_image_b64(request['params']['image'])
+            # [左上, 右上, 右下, 左下] --> [x_min, x_max, y_min, y_max]
+            boxes = []
+            for box in request['params']['boxes']:
+                boxes.append([box[0][0], box[1][0], box[0][1], box[2][1]])
+            r1, _ = ocr.recognize(img, boxes, [])
+
+            # 记录日志
+            mongo.rag_log.insert_one({
+                'request_id': request_id,
+                'time_t': helper.time_str(),
+                'category': 'OCR_DET',
+                'image': request['params']['image'],
+                'result': r1,
+                'extras': {'boxes': request['params']['boxes']},
+            })
+
+            # 准备结果
+            result = { 'code' : 0, 'msg':'success', 'result' : r1 }
+
+        else: # 未知 api
+            logger.error('Unknown api: '+request['api']) 
+            result = { 'code' : 9900, 'msg' : '未知 api 调用' }
+
+    except binascii.Error as e:
+        logger.error("编码转换异常: %s" % e)
+        result = { 'code' : 9901, 'msg' : 'base64编码异常: '+str(e) }
+
+    except Exception as e:
+        logger.error("未知异常: %s" % e, exc_info=True)
+        result = { 'code' : 9998, 'msg' : '未知错误: '+str(e) }
+
+    return result
+
+
+
+def process_thread(msg_body):
+    try:
+
+        logger.info('{} Calling api: {}'.format(msg_body['request_id'], msg_body['data'].get('api', 'Unknown'))) 
+
+        start_time = datetime.now()
+
+        api_result = process_api(msg_body['request_id'], msg_body['data'])
+
+        logger.info('1 ===> [Time taken: {!s}]'.format(datetime.now() - start_time))
+        
+        # 发布redis消息
+        helper.redis_publish(msg_body['request_id'], api_result)
+        
+        logger.info('{} {} [Time taken: {!s}]'.format(msg_body['request_id'], msg_body['data']['api'], datetime.now() - start_time))
+
+        sys.stdout.flush()
+
+    except Exception as e:
+        logger.error("process_thread异常: %s" % e, exc_info=True)
+
+
+
+if __name__ == '__main__':
+    if len(sys.argv)<4:
+        print("usage: dispatcher.py <QUEUE_NO.> <gpu>")
+        sys.exit(2)
+
+    queue_no = sys.argv[1]
+    gpu = sys.argv[2]
+
+    print('Request queue NO. ', queue_no)
+
+
+    sys.stdout.flush()
+
+    while 1:
+        try:
+            # redis queue
+            ps = helper.redis_subscribe(REDIS_CONFIG['REQUEST-QUEUE']+queue_no)
+
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_DISPATCHER_WORKERS) # 建议与cpu核数相同
+
+            for item in ps.listen():        #监听状态：有消息发布了就拿过来
+                logger.info('reveived: type=%s running=%d pending=%d'% \
+                    (item['type'], len(executor._threads), executor._work_queue.qsize())) 
+                if item['type'] == 'message':
+                    #print(item)
+                    msg_body = json.loads(item['data'].decode('utf-8'))
+
+                    future = executor.submit(process_thread, msg_body)
+                    logger.info('Thread future: '+str(future)) 
+
+                sys.stdout.flush()
+
+        except Exception as e:
+            logger.info('Exception: '+str(e)) 
+            time.sleep(20)
