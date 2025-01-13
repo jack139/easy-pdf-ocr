@@ -17,3 +17,10 @@
 ~/.EasyOCR/model/english_g2.pth
 ~/.EasyOCR/model/zh_sim_g2.pth
 ```
+
+
+## 启动
+
+```bash
+python3.9 dispatcher.py 0
+```

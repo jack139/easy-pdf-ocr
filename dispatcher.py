@@ -28,7 +28,12 @@ def process_api(request_id, request_msg):
             img = ocr.load_image_b64(request['params']['image'])
             r1, _ = ocr.detect(img)
             # [x_min, x_max, y_min, y_max] --> [左上, 右上, 右下, 左下] 
-            boxes = [[[i[0],i[2]],[i[1],i[2]],[i[1],i[3]],[i[0],i[3]]] for i in r1]
+            boxes = [[
+                [int(i[0]),int(i[2])],
+                [int(i[1]),int(i[2])],
+                [int(i[1]),int(i[3])],
+                [int(i[0]),int(i[3])]
+            ] for i in r1]
 
             # 记录日志
             mongo.rag_log.insert_one({
@@ -110,12 +115,12 @@ def process_thread(msg_body):
 
 
 if __name__ == '__main__':
-    if len(sys.argv)<4:
-        print("usage: dispatcher.py <QUEUE_NO.> <gpu>")
+    if len(sys.argv)<2:
+        print("usage: dispatcher.py <QUEUE_NO.>")
         sys.exit(2)
 
     queue_no = sys.argv[1]
-    gpu = sys.argv[2]
+    #gpu = sys.argv[2]
 
     print('Request queue NO. ', queue_no)
 
