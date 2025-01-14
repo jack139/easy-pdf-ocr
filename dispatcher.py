@@ -56,7 +56,7 @@ def process_api(request_id, request_msg):
             boxes = []
             for box in param_boxes:
                 boxes.append([box[0][0], box[1][0], box[0][1], box[2][1]])
-            r1, _ = ocr.recognize(img, boxes, [])
+            r1 = ocr.recognize(img, boxes, [])
 
             # 记录日志
             mongo.rag_log.insert_one({
