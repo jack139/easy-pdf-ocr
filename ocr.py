@@ -24,7 +24,7 @@ class JsonEncoder(json.JSONEncoder):
 
 
 # 将 base64 编码的图片转为 opencv 数组
-def load_image_b64(b64_data, remove_color=True, max_size=1500):
+def load_image_b64(b64_data, remove_color=True, max_size=None):
     data = base64.b64decode(b64_data) # Bytes
     tmp_buff = BytesIO()
     tmp_buff.write(data)
@@ -35,10 +35,11 @@ def load_image_b64(b64_data, remove_color=True, max_size=1500):
         img = img[:, :, ::-1] # 去色，强化图片
     tmp_buff.close()
     # 压缩处理
-    max_width = max(img.shape)
-    if max_width>max_size: # 图片最大宽度为 1500
-        ratio = max_size/max_width
-        img = cv2.resize(img, (round(img.shape[1]*ratio), round(img.shape[0]*ratio)))
+    if max_size is not None:
+        max_width = max(img.shape)
+        if max_width>max_size: # 图片最大宽度为 1500
+            ratio = max_size/max_width
+            img = cv2.resize(img, (round(img.shape[1]*ratio), round(img.shape[0]*ratio)))
     return img
 
 
@@ -47,7 +48,9 @@ def ocr(img):
     return result
 
 def detect(img):
-    horizontal_list, free_list = reader.detect(img)
+    height, width, channel = img.shape
+    print(img.shape)
+    horizontal_list, free_list = reader.detect(img, canvas_size=max(height, width))
     return horizontal_list[0], free_list[0]
 
 def recognize(img, horizontal_list, free_list):
