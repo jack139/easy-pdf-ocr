@@ -27,20 +27,16 @@ def process_api(request_id, request_msg):
             # base64 图片 转为 opencv 数据
             img = ocr.load_image_b64(request['params']['image'])
             r1, _ = ocr.detect(img)
-            # [x_min, x_max, y_min, y_max] --> [左上, 右上, 右下, 左下] 
-            boxes = [[
-                [int(i[0]),int(i[2])],
-                [int(i[1]),int(i[2])],
-                [int(i[1]),int(i[3])],
-                [int(i[0]),int(i[3])]
-            ] for i in r1]
+
+            # [x_min, x_max, y_min, y_max]
+            boxes = [[int(i[0]), int(i[1]), int(i[2]), int(i[3])] for i in r1] # 屏蔽 numpy.int64
 
             # 记录日志
             mongo.rag_log.insert_one({
                 'request_id': request_id,
                 'time_t': helper.time_str(),
                 'category': 'OCR_DET',
-                'image': request['params']['image'],
+                #'image': request['params']['image'],
                 'result': boxes,
                 'extras': {},
             })
@@ -52,24 +48,21 @@ def process_api(request_id, request_msg):
             # base64 图片 转为 opencv 数据
             img = ocr.load_image_b64(request['params']['image'])
             param_boxes = json.loads(request['params']['boxes'])
-            # [左上, 右上, 右下, 左下] --> [x_min, x_max, y_min, y_max]
-            boxes = []
-            for box in param_boxes:
-                boxes.append([box[0][0], box[1][0], box[0][1], box[2][1]])
-            r1 = ocr.recognize(img, boxes, [])
+            #  param_boxes 格式 [ [x_min, x_max, y_min, y_max] ]
+            r1 = ocr.recognize(img, param_boxes, [])
 
             # 记录日志
             mongo.rag_log.insert_one({
                 'request_id': request_id,
                 'time_t': helper.time_str(),
-                'category': 'OCR_DET',
-                'image': request['params']['image'],
-                'result': r1,
+                'category': 'OCR_REC',
+                #'image': request['params']['image'],
+                'result': r1[0],
                 'extras': {'boxes': request['params']['boxes']},
             })
 
             # 准备结果
-            result = { 'code' : 0, 'msg':'success', 'result' : r1 }
+            result = { 'code' : 0, 'msg':'success', 'result' : r1[0][1] }
 
         else: # 未知 api
             logger.error('Unknown api: '+request['api']) 
