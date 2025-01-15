@@ -11,7 +11,7 @@ $(TARGETS):
 	-$(PY) $(TARGETS)
 	@find $(TARGETS) -name '*.py' -delete
 	@find $(TARGETS) -name "__pycache__" |xargs rm -rf
-	#@rm $(TARGETS)/settings.pyc
+	@rm $(TARGETS)/settings.pyc
 
 clean:
 	@echo "Clean ..." 
