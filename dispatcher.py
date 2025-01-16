@@ -64,6 +64,36 @@ def process_api(request_id, request_msg):
             # 准备结果
             result = { 'code' : 0, 'msg':'success', 'result' : r1[0][1] }
 
+        elif request['api']=='/api/ocr/ocr': # 文本 OCR
+            # base64 图片 转为 opencv 数据
+            img = ocr.load_image_b64(request['params']['image'])
+            r1 = ocr.ocr(img)
+
+            # [x_min, x_max, y_min, y_max]
+            result = [[
+                    [
+                        min(int(i[0][0][0]), int(i[0][3][0])),
+                        max(int(i[0][1][0]), int(i[0][2][0])),
+                        min(int(i[0][0][1]), int(i[0][1][1])),
+                        max(int(i[0][2][1]), int(i[0][3][1])),
+                    ],
+                    i[1],
+                    i[2]
+                ] for i in r1] # 屏蔽 numpy.int64
+
+            # 记录日志
+            mongo.rag_log.insert_one({
+                'request_id': request_id,
+                'time_t': helper.time_str(),
+                'category': 'OCR_OCR',
+                #'image': request['params']['image'],
+                'result': result,
+                'extras': {},
+            })
+
+            # 准备结果
+            result = { 'code' : 0, 'msg':'success', 'result' : result }
+
         else: # 未知 api
             logger.error('Unknown api: '+request['api']) 
             result = { 'code' : 9900, 'msg' : '未知 api 调用' }
