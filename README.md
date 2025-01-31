@@ -19,8 +19,26 @@
 ```
 
 
-## 启动
+
+## 测试
+
+```bash
+python3.9 ocr.py "image-path"
+```
+
+
+
+## API server
+
+使用 [go-infer](https://github.com/jack139/go-infer)
 
 ```bash
 python3.9 dispatcher.py 0
 ```
+
+
+## 模型相关链接
+
+https://github.com/JaidedAI/EasyOCR
+
+https://github.com/open-mmlab/mmocr
