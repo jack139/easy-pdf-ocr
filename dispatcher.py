@@ -25,7 +25,7 @@ def process_api(request_id, request_msg):
     try:
         if request['api']=='/api/ocr/det': # 文本检测
             # base64 图片 转为 opencv 数据
-            img = ocr.load_image_b64(request['params']['image'])
+            img, shape = ocr.load_image_b64(request['params']['image'])
             r1, _ = ocr.detect(img)
 
             # [x_min, x_max, y_min, y_max]
@@ -42,11 +42,11 @@ def process_api(request_id, request_msg):
             })
 
             # 准备结果
-            result = { 'code' : 0, 'msg':'success', 'boxes' : boxes }
+            result = { 'code' : 0, 'msg':'success', 'boxes' : boxes, 'shape' : shape }
 
         elif request['api']=='/api/ocr/rec': # 文字识别
             # base64 图片 转为 opencv 数据
-            img = ocr.load_image_b64(request['params']['image'])
+            img, _ = ocr.load_image_b64(request['params']['image'])
             param_boxes = json.loads(request['params']['boxes'])
             #  param_boxes 格式 [ [x_min, x_max, y_min, y_max] ]
             r1 = ocr.recognize(img, param_boxes, [])
@@ -66,7 +66,7 @@ def process_api(request_id, request_msg):
 
         elif request['api']=='/api/ocr/ocr': # 文本 OCR
             # base64 图片 转为 opencv 数据
-            img = ocr.load_image_b64(request['params']['image'])
+            img, _ = ocr.load_image_b64(request['params']['image'])
             r1 = ocr.ocr(img)
 
             # [x_min, x_max, y_min, y_max]

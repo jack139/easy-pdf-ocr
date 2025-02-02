@@ -40,7 +40,7 @@ def load_image_b64(b64_data, remove_color=True, max_size=None):
         if max_width>max_size: # 图片最大宽度为 1500
             ratio = max_size/max_width
             img = cv2.resize(img, (round(img.shape[1]*ratio), round(img.shape[0]*ratio)))
-    return img
+    return img, (img.shape[1], img.shape[0])
 
 
 def ocr(img):    
