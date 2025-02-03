@@ -17,7 +17,7 @@ logger = logger.get_logger(__name__)
 
 
 # db connection: thread-safe
-mongo = helper.mongo_conn()
+#mongo = helper.mongo_conn()
 
 
 def process_api(request_id, request_msg):
@@ -32,14 +32,14 @@ def process_api(request_id, request_msg):
             boxes = [[int(i[0]), int(i[1]), int(i[2]), int(i[3])] for i in r1] # 屏蔽 numpy.int64
 
             # 记录日志
-            mongo.rag_log.insert_one({
-                'request_id': request_id,
-                'time_t': helper.time_str(),
-                'category': 'OCR_DET',
-                #'image': request['params']['image'],
-                'result': boxes,
-                'extras': {},
-            })
+            #mongo.rag_log.insert_one({
+            #    'request_id': request_id,
+            #    'time_t': helper.time_str(),
+            #    'category': 'OCR_DET',
+            #    #'image': request['params']['image'],
+            #    'result': boxes,
+            #    'extras': {},
+            #})
 
             # 准备结果
             result = { 'code' : 0, 'msg':'success', 'boxes' : boxes, 'shape' : shape }
@@ -52,14 +52,14 @@ def process_api(request_id, request_msg):
             r1 = ocr.recognize(img, param_boxes, [])
 
             # 记录日志
-            mongo.rag_log.insert_one({
-                'request_id': request_id,
-                'time_t': helper.time_str(),
-                'category': 'OCR_REC',
-                #'image': request['params']['image'],
-                'result': r1[0],
-                'extras': {'boxes': request['params']['boxes']},
-            })
+            #mongo.rag_log.insert_one({
+            #    'request_id': request_id,
+            #    'time_t': helper.time_str(),
+            #    'category': 'OCR_REC',
+            #    #'image': request['params']['image'],
+            #    'result': r1[0],
+            #    'extras': {'boxes': request['params']['boxes']},
+            #})
 
             # 准备结果
             result = { 'code' : 0, 'msg':'success', 'result' : r1[0][1] }
@@ -82,14 +82,14 @@ def process_api(request_id, request_msg):
                 ] for i in r1] # 屏蔽 numpy.int64
 
             # 记录日志
-            mongo.rag_log.insert_one({
-                'request_id': request_id,
-                'time_t': helper.time_str(),
-                'category': 'OCR_OCR',
-                #'image': request['params']['image'],
-                'result': result,
-                'extras': {},
-            })
+            #mongo.rag_log.insert_one({
+            #    'request_id': request_id,
+            #    'time_t': helper.time_str(),
+            #    'category': 'OCR_OCR',
+            #    #'image': request['params']['image'],
+            #    'result': result,
+            #    'extras': {},
+            #})
 
             # 准备结果
             result = { 'code' : 0, 'msg':'success', 'result' : result }
