@@ -15,6 +15,7 @@ import ocr
 
 logger = logger.get_logger(__name__)
 
+ocr_model = None
 
 # db connection: thread-safe
 #mongo = helper.mongo_conn()
@@ -26,7 +27,7 @@ def process_api(request_id, request_msg):
         if request['api']=='/api/ocr/det': # 文本检测
             # base64 图片 转为 opencv 数据
             img, shape = ocr.load_image_b64(request['params']['image'])
-            r1, _ = ocr.detect(img)
+            r1, _ = ocr_model.detect(img)
 
             # [x_min, x_max, y_min, y_max]
             boxes = [[int(i[0]), int(i[1]), int(i[2]), int(i[3])] for i in r1] # 屏蔽 numpy.int64
@@ -49,7 +50,7 @@ def process_api(request_id, request_msg):
             img, _ = ocr.load_image_b64(request['params']['image'])
             param_boxes = json.loads(request['params']['boxes'])
             #  param_boxes 格式 [ [x_min, x_max, y_min, y_max] ]
-            r1 = ocr.recognize(img, param_boxes, [])
+            r1 = ocr_model.recognize(img, param_boxes, [])
 
             # 记录日志
             #mongo.rag_log.insert_one({
@@ -67,7 +68,7 @@ def process_api(request_id, request_msg):
         elif request['api']=='/api/ocr/ocr': # 文本 OCR
             # base64 图片 转为 opencv 数据
             img, _ = ocr.load_image_b64(request['params']['image'])
-            r1 = ocr.ocr(img)
+            r1 = ocr_model.ocr(img)
 
             # [x_min, x_max, y_min, y_max]
             result = [[
@@ -139,14 +140,15 @@ def process_thread(msg_body):
 
 if __name__ == '__main__':
     if len(sys.argv)<2:
-        print("usage: dispatcher.py <QUEUE_NO.>")
+        print("usage: dispatcher.py <QUEUE_NO.> <gpu>")
         sys.exit(2)
 
     queue_no = sys.argv[1]
-    #gpu = sys.argv[2]
+    gpu = sys.argv[2]
 
     print('Request queue NO. ', queue_no)
 
+    ocr_model = ocr.OCR(device=f"cuda:{gpu}")
 
     sys.stdout.flush()
 

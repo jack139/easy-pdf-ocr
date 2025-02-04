@@ -6,10 +6,6 @@ import numpy as np
 import cv2
 import easyocr
 
-# this needs to run only once to load the model into memory
-reader = easyocr.Reader(['ch_sim','en'])
-#reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet50')
-
 
 class JsonEncoder(json.JSONEncoder):
     """Convert numpy classes to JSON serializable objects."""
@@ -43,19 +39,26 @@ def load_image_b64(b64_data, remove_color=True, max_size=None):
     return img, (img.shape[1], img.shape[0])
 
 
-def ocr(img):    
-    result = reader.readtext(img)
-    return result
+class OCR():
+    def __init__(self, device="cuda:0"):
+        # this needs to run only once to load the model into memory
+        self.reader = easyocr.Reader(['ch_sim','en'], gpu=device)
+        #self.reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet50', gpu=device)
+        print("Load OCR model to device:", device)
 
-def detect(img):
-    height, width, channel = img.shape
-    print(img.shape)
-    horizontal_list, free_list = reader.detect(img, canvas_size=max(height, width))
-    return horizontal_list[0], free_list[0]
+    def ocr(self, img):    
+        result = self.reader.readtext(img)
+        return result
 
-def recognize(img, horizontal_list, free_list):
-    result = reader.recognize(img, horizontal_list, free_list)
-    return result
+    def detect(self, img):
+        height, width, channel = img.shape
+        print(img.shape)
+        horizontal_list, free_list = self.reader.detect(img, canvas_size=max(height, width))
+        return horizontal_list[0], free_list[0]
+
+    def recognize(self, img, horizontal_list, free_list):
+        result = self.reader.recognize(img, horizontal_list, free_list)
+        return result
 
 
 def draw_boxes(img, boxes):
@@ -74,15 +77,17 @@ if __name__ == '__main__':
 
     img = cv2.imread(sys.argv[1])
 
+    ocr_model = OCR()
+
     '''
     # 一步 ocr
-    r3 = ocr(img)
+    r3 = ocr_model.ocr(img)
 
     boxes = [i[0] for i in r3]
     '''
 
     # 只检测文本
-    r1, r2 = detect(img)
+    r1, r2 = ocr_model.detect(img)
 
     print(r1)  # [x_min, x_max, y_min, y_max]
     print(r2)
@@ -97,7 +102,7 @@ if __name__ == '__main__':
     box = boxes[0]
     box = [box[0][0], box[1][0], box[0][1], box[2][1]]
     print(box)
-    r3 = recognize(img, [box], [])
+    r3 = ocr_model.recognize(img, [box], [])
 
 
     print(boxes)
