@@ -73,10 +73,8 @@ class OCR():
         connector = link_x_boxes.BoxesConnector(rects, w, max_dist=15, overlap_threshold=0.3)
         new_boxes = connector.connect_boxes()
 
-        # 转换坐标
-        det_boxes = [ [ i[0], i[2], i[1], i[3] ] for i in new_boxes]
-
-        print(det_boxes)
+        # 转换坐标/ 过滤掉 高大于宽 的 box 
+        det_boxes = [ [ i[0], i[2], i[1], i[3] ] for i in new_boxes if (i[2]-i[0]) > (i[3]-i[1]) ]
 
         result = self.recognize(img, det_boxes, [])
         return result
