@@ -140,15 +140,15 @@ def process_thread(msg_body):
 
 if __name__ == '__main__':
     if len(sys.argv)<2:
-        print("usage: dispatcher.py <QUEUE_NO.> <gpu>")
+        print("usage: dispatcher.py <QUEUE_NO.>")
         sys.exit(2)
 
     queue_no = sys.argv[1]
-    gpu = sys.argv[2]
+    #gpu = sys.argv[2]
 
     print('Request queue NO. ', queue_no)
 
-    ocr_model = ocr.OCR(device=f"cuda:{gpu}")
+    ocr_model = ocr.OCR()
 
     sys.stdout.flush()
 

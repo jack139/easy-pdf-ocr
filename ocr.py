@@ -41,11 +41,10 @@ def load_image_b64(b64_data, remove_color=True, max_size=None):
 
 
 class OCR():
-    def __init__(self, device="cuda:0"):
+    def __init__(self):
         # this needs to run only once to load the model into memory
-        self.reader = easyocr.Reader(['ch_sim','en'], gpu=device)
-        #self.reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet50', gpu=True)
-        print("Load OCR model to device:", device)
+        self.reader = easyocr.Reader(['ch_sim','en'])
+        #self.reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet50')
 
     def detect(self, img):
         height, width, channel = img.shape
