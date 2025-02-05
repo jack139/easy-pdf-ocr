@@ -68,7 +68,7 @@ def process_api(request_id, request_msg):
         elif request['api']=='/api/ocr/ocr': # 文本 OCR
             # base64 图片 转为 opencv 数据
             img, _ = ocr.load_image_b64(request['params']['image'])
-            r1 = ocr_model.ocr(img)
+            r1 = ocr_model.ocr_w_merge(img)
 
             # [x_min, x_max, y_min, y_max]
             result = [[

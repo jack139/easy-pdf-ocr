@@ -5,6 +5,7 @@ from io import BytesIO
 import numpy as np
 import cv2
 import easyocr
+from utils import link_x_boxes
 
 
 class JsonEncoder(json.JSONEncoder):
@@ -43,12 +44,8 @@ class OCR():
     def __init__(self, device="cuda:0"):
         # this needs to run only once to load the model into memory
         self.reader = easyocr.Reader(['ch_sim','en'], gpu=device)
-        #self.reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet50', gpu=device)
+        #self.reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet50', gpu=True)
         print("Load OCR model to device:", device)
-
-    def ocr(self, img):    
-        result = self.reader.readtext(img)
-        return result
 
     def detect(self, img):
         height, width, channel = img.shape
@@ -58,6 +55,30 @@ class OCR():
 
     def recognize(self, img, horizontal_list, free_list):
         result = self.reader.recognize(img, horizontal_list, free_list)
+        return result
+
+    def ocr(self, img):    
+        result = self.reader.readtext(img)
+        return result
+
+    def ocr_w_merge(self, img):
+        h, w, c = img.shape
+
+        det_boxes, _ = self.detect(img)
+
+        # 转换坐标： (x_min, x_max, y_min, y_max) --> (x1, y1, x2, y2)
+        rects = [ [ i[0], i[2], i[1], i[3] ] for i in det_boxes]
+
+        # 横向合并 box
+        connector = link_x_boxes.BoxesConnector(rects, w, max_dist=15, overlap_threshold=0.3)
+        new_boxes = connector.connect_boxes()
+
+        # 转换坐标
+        det_boxes = [ [ i[0], i[2], i[1], i[3] ] for i in new_boxes]
+
+        print(det_boxes)
+
+        result = self.recognize(img, det_boxes, [])
         return result
 
 
@@ -79,9 +100,9 @@ if __name__ == '__main__':
 
     ocr_model = OCR()
 
-    '''
+    
     # 一步 ocr
-    r3 = ocr_model.ocr(img)
+    r3 = ocr_model.ocr_w_merge(img)
 
     boxes = [i[0] for i in r3]
     '''
@@ -103,7 +124,7 @@ if __name__ == '__main__':
     box = [box[0][0], box[1][0], box[0][1], box[2][1]]
     print(box)
     r3 = ocr_model.recognize(img, [box], [])
-
+    '''
 
     print(boxes)
     draw_boxes(img, boxes)
