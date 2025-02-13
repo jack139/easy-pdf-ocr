@@ -17,9 +17,6 @@ logger = logger.get_logger(__name__)
 
 ocr_model = None
 
-# db connection: thread-safe
-#mongo = helper.mongo_conn()
-
 
 def process_api(request_id, request_msg):
     request = request_msg
@@ -32,16 +29,6 @@ def process_api(request_id, request_msg):
             # [x_min, x_max, y_min, y_max]
             boxes = [[int(i[0]), int(i[1]), int(i[2]), int(i[3])] for i in r1] # 屏蔽 numpy.int64
 
-            # 记录日志
-            #mongo.rag_log.insert_one({
-            #    'request_id': request_id,
-            #    'time_t': helper.time_str(),
-            #    'category': 'OCR_DET',
-            #    #'image': request['params']['image'],
-            #    'result': boxes,
-            #    'extras': {},
-            #})
-
             # 准备结果
             result = { 'code' : 0, 'msg':'success', 'boxes' : boxes, 'shape' : shape }
 
@@ -51,16 +38,6 @@ def process_api(request_id, request_msg):
             param_boxes = json.loads(request['params']['boxes'])
             #  param_boxes 格式 [ [x_min, x_max, y_min, y_max] ]
             r1 = ocr_model.recognize(img, param_boxes, [])
-
-            # 记录日志
-            #mongo.rag_log.insert_one({
-            #    'request_id': request_id,
-            #    'time_t': helper.time_str(),
-            #    'category': 'OCR_REC',
-            #    #'image': request['params']['image'],
-            #    'result': r1[0],
-            #    'extras': {'boxes': request['params']['boxes']},
-            #})
 
             # 准备结果
             result = { 'code' : 0, 'msg':'success', 'result' : r1[0][1] }
@@ -81,16 +58,6 @@ def process_api(request_id, request_msg):
                     i[1],
                     i[2]
                 ] for i in r1] # 屏蔽 numpy.int64
-
-            # 记录日志
-            #mongo.rag_log.insert_one({
-            #    'request_id': request_id,
-            #    'time_t': helper.time_str(),
-            #    'category': 'OCR_OCR',
-            #    #'image': request['params']['image'],
-            #    'result': result,
-            #    'extras': {},
-            #})
 
             # 准备结果
             result = { 'code' : 0, 'msg':'success', 'result' : result }
@@ -148,7 +115,7 @@ if __name__ == '__main__':
 
     print('Request queue NO. ', queue_no)
 
-    ocr_model = ocr.OCR()
+    ocr_model = ocr.OCR(recognizer=False) # 只使用文本检测
 
     sys.stdout.flush()
 

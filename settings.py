@@ -1,9 +1,3 @@
-# mongo DB 配置
-mongodb_ip = "127.0.0.1"
-mongodb_cname = "rag_db"
-mongodb_user = "ipcam"
-mongodb_passwd = "ipcam"
-
 # dispatcher 中 最大线程数
 MAX_DISPATCHER_WORKERS = 8
 

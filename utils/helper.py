@@ -7,10 +7,6 @@ from pymongo import MongoClient
 
 from settings import (
     REDIS_CONFIG,
-    mongodb_ip, 
-    mongodb_cname, 
-    mongodb_user, 
-    mongodb_passwd,
 )
 from . import logger
 
@@ -104,14 +100,3 @@ def redis_publish_request(request_id, data):
     print('queue:', queue)
 
     return redis_publish(queue, msg_body)
-
-
-#########################
-
-# 链接 mongodb
-def mongo_conn(db_serv_list=mongodb_ip, dbname=mongodb_cname, user=mongodb_user, passwd=mongodb_passwd):
-    cli = MongoClient(db_serv_list)
-    db = cli[dbname]
-    if user:
-        db.authenticate(user, passwd)
-    return db

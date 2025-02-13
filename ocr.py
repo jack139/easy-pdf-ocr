@@ -41,10 +41,10 @@ def load_image_b64(b64_data, remove_color=True, max_size=None):
 
 
 class OCR():
-    def __init__(self):
+    def __init__(self, recognizer=True): # 默认使用：文本检测 + 文本识别
         # this needs to run only once to load the model into memory
-        self.reader = easyocr.Reader(['ch_sim','en'])
-        #self.reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet50')
+        self.reader = easyocr.Reader(['ch_sim','en'], recognizer=recognizer)
+        #self.reader = easyocr.Reader(['ch_sim','en'], detect_network = 'dbnet18')
 
     def detect(self, img):
         height, width, channel = img.shape
